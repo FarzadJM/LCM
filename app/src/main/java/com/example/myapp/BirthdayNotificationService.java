@@ -65,7 +65,7 @@ public class BirthdayNotificationService extends Service {
                     }
                 }
             }
-    }, 0, 1000); // Run every 1 hour
+    }, 0, 60 * 60 * 1000); // Run every 1 hour
 
         return START_STICKY;
     }
@@ -85,7 +85,9 @@ public class BirthdayNotificationService extends Service {
 
     private void createTextMessage(String phone) {
         // Compose the message to be sent
-        String message = "Happy Birthday! It's your birthday today! You have one free haircut today, give us a visit.";
+        String message = "\uD83C\uDF89 Happy Birthday! \uD83C\uDF89 \n" +
+                "As a valued customer of Wirral Turkish Barbers, we want to celebrate your special day with you. \uD83E\uDD73 Enjoy a complimentary birthday haircut on us!\n" +
+                "Book your appointment within the next 3 days to claim your free cut. Just reply to this message or give us a call at 07415174030.";
 
         // Send the text message
         SmsManager smsManager = SmsManager.getDefault();

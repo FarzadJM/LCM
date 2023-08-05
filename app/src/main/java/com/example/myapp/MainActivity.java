@@ -1,9 +1,16 @@
 package com.example.myapp;
 
 import android.annotation.SuppressLint;
+import android.app.NotificationChannel;
+import android.app.NotificationManager;
+import android.app.PendingIntent;
+import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
+import android.content.pm.PackageManager;
+import android.os.Build;
 import android.os.Bundle;
+import android.telephony.SmsManager;
 import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.MenuItem;
@@ -18,6 +25,9 @@ import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.SearchView;
 import androidx.appcompat.widget.Toolbar;
+import androidx.core.app.ActivityCompat;
+import androidx.core.app.NotificationCompat;
+import androidx.core.app.NotificationManagerCompat;
 
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
 
@@ -111,6 +121,10 @@ public class MainActivity extends AppCompatActivity {
             });
             dialog.show();
         });
+
+        // Start the BirthdayNotificationService
+        Intent serviceIntent = new Intent(MainActivity.this, BirthdayNotificationService.class);
+        MainActivity.this.startService(serviceIntent);
     }
 
     @Override
@@ -119,9 +133,6 @@ public class MainActivity extends AppCompatActivity {
         dataList.clear();
         dataList.addAll(dbHandler.getAllCustomers());
         adapter.notifyDataSetChanged();
-        // Start the BirthdayNotificationService
-        Intent serviceIntent = new Intent(MainActivity.this, BirthdayNotificationService.class);
-        MainActivity.this.startService(serviceIntent);
     }
 
     @Override
