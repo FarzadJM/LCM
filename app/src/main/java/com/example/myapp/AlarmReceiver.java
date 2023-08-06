@@ -1,20 +1,17 @@
 package com.example.myapp;
 
-import android.app.AlertDialog;
+import android.app.AlarmManager;
 import android.app.NotificationChannel;
 import android.app.NotificationManager;
 import android.app.PendingIntent;
-import android.app.Service;
+import android.content.BroadcastReceiver;
 import android.content.Context;
-import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.os.Build;
-import android.os.IBinder;
 import android.telephony.SmsManager;
 import android.widget.Toast;
 
-import androidx.annotation.Nullable;
 import androidx.core.app.ActivityCompat;
 import androidx.core.app.NotificationCompat;
 import androidx.core.app.NotificationManagerCompat;
@@ -22,65 +19,37 @@ import androidx.core.content.ContextCompat;
 
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.Timer;
-import java.util.TimerTask;
 
-public class BirthdayNotificationService extends Service {
-
+public class AlarmReceiver extends BroadcastReceiver {
     private static final String CHANNEL_ID = "BirthdayChannel";
     private static final int NOTIFICATION_ID = 1;
 
-    private Timer timer;
-    private DatabaseHelper dbHelper;
-
     @Override
-    public int onStartCommand(Intent intent, int flags, int startId) {
-        dbHelper = new DatabaseHelper(this);
+    public void onReceive(Context context, Intent intent) {
+        DatabaseHelper dbHelper = new DatabaseHelper(context);
 
-        // Start the timer to send the text message every one hour every day
-        timer = new Timer();
-        timer.scheduleAtFixedRate(new TimerTask() {
-            @Override
-            public void run() {
-                ArrayList<HashMap<String, String>> todayBirthdays = dbHelper.getTodayBirthdays();
+        ArrayList<HashMap<String, String>> todayBirthdays = dbHelper.getTodayBirthdays();
 
-                for (int i = 0; i < todayBirthdays.size(); i++) {
-                    // Get a customer to send message
-                    HashMap<String, String> customer = todayBirthdays.get(i);
-                    String phone = customer.get("phone");
-                    String name = customer.get("name");
+        for (int i = 0; i < todayBirthdays.size(); i++) {
+            // Get a customer to send message
+            HashMap<String, String> customer = todayBirthdays.get(i);
+            String phone = customer.get("phone");
+            String name = customer.get("name");
 
-                    // Send message if didn't send for today
-                    if (!dbHelper.isMessageSentToday(phone)) {
-                        if (ContextCompat.checkSelfPermission(BirthdayNotificationService.this, android.Manifest.permission.SEND_SMS) == PackageManager.PERMISSION_GRANTED) {
-                            // Send the text message
-                            createTextMessage(phone);
+            // Send message if didn't send for today
+            if (!dbHelper.isMessageSentToday(phone)) {
+                if (ContextCompat.checkSelfPermission(context, android.Manifest.permission.SEND_SMS) == PackageManager.PERMISSION_GRANTED) {
+                    // Send the text message
+                    createTextMessage(phone);
 
-                            // Save the message sent today for this number and birthdate to the database
-                            dbHelper.saveMessageSentToday(phone);
+                    // Save the message sent today for this number and birthdate to the database
+                    dbHelper.saveMessageSentToday(phone);
 
-                            // Send notification to this app user to let him know about sent message
-                            createNotification(BirthdayNotificationService.this, "Birthday free haircut message sent to " + name);
-                        }
-                    }
+                    // Send notification to this app user to let him know about sent message
+                    createNotification(context, "Birthday free haircut message sent to " + name);
                 }
             }
-    }, 0, 60 * 60 * 1000); // Run every 1 hour
-
-        return START_STICKY;
-    }
-
-    @Override
-    public void onDestroy() {
-        super.onDestroy();
-        // Stop the timer when the service is destroyed
-        timer.cancel();
-    }
-
-    @Nullable
-    @Override
-    public IBinder onBind(Intent intent) {
-        return null;
+        }
     }
 
     private void createTextMessage(String phone) {
@@ -119,7 +88,7 @@ public class BirthdayNotificationService extends Service {
 
         // Show the notification
         NotificationManagerCompat notificationManager = NotificationManagerCompat.from(context);
-        if (ActivityCompat.checkSelfPermission(this, android.Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED) {
+        if (ActivityCompat.checkSelfPermission(context, android.Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED) {
             // TODO: Consider calling
             //    ActivityCompat#requestPermissions
             // here to request the missing permissions, and then overriding

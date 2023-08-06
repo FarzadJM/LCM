@@ -1,6 +1,7 @@
 package com.example.myapp;
 
 import android.annotation.SuppressLint;
+import android.app.AlarmManager;
 import android.app.NotificationChannel;
 import android.app.NotificationManager;
 import android.app.PendingIntent;
@@ -122,9 +123,21 @@ public class MainActivity extends AppCompatActivity {
             dialog.show();
         });
 
-        // Start the BirthdayNotificationService
-        Intent serviceIntent = new Intent(MainActivity.this, BirthdayNotificationService.class);
-        MainActivity.this.startService(serviceIntent);
+        // Get an instance of AlarmManager
+        AlarmManager alarmManager = (AlarmManager) getSystemService(ALARM_SERVICE);
+
+        // Create a PendingIntent that will start the BroadcastReceiver
+        Intent intent2 = new Intent(this, AlarmReceiver.class);
+        PendingIntent pendingIntent = PendingIntent.getBroadcast(this, 0, intent2, PendingIntent.FLAG_IMMUTABLE);
+
+        alarmManager.cancel(pendingIntent);
+
+        // Set the time for the alarm (in this case, one hour from now)
+        long interval = AlarmManager.INTERVAL_HOUR;
+        long startTime = System.currentTimeMillis();
+
+        // Use setExactAndAllowWhileIdle instead of setRepeating
+        alarmManager.setRepeating(AlarmManager.RTC_WAKEUP, startTime, interval, pendingIntent);
     }
 
     @Override
