@@ -29,6 +29,7 @@ import androidx.appcompat.widget.Toolbar;
 import androidx.core.app.ActivityCompat;
 import androidx.core.app.NotificationCompat;
 import androidx.core.app.NotificationManagerCompat;
+import androidx.core.content.ContextCompat;
 
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
 
@@ -123,21 +124,10 @@ public class MainActivity extends AppCompatActivity {
             dialog.show();
         });
 
-        // Get an instance of AlarmManager
-        AlarmManager alarmManager = (AlarmManager) getSystemService(ALARM_SERVICE);
+        Intent serviceIntent = new Intent(this, MessageSenderService.class);
+        ContextCompat.startForegroundService(this, serviceIntent);
 
-        // Create a PendingIntent that will start the BroadcastReceiver
-        Intent intent2 = new Intent(this, AlarmReceiver.class);
-        PendingIntent pendingIntent = PendingIntent.getBroadcast(this, 0, intent2, PendingIntent.FLAG_IMMUTABLE);
-
-        alarmManager.cancel(pendingIntent);
-
-        // Set the time for the alarm (in this case, one hour from now)
-        long interval = AlarmManager.INTERVAL_HOUR;
-        long startTime = System.currentTimeMillis();
-
-        // Use setExactAndAllowWhileIdle instead of setRepeating
-        alarmManager.setRepeating(AlarmManager.RTC_WAKEUP, startTime, interval, pendingIntent);
+        AlarmManagerHelper.scheduleAlarm(this);
     }
 
     @Override
