@@ -10,6 +10,7 @@ import android.content.pm.PackageManager;
 import android.os.Build;
 import android.os.IBinder;
 import android.telephony.SmsManager;
+import android.widget.Toast;
 
 import androidx.core.app.ActivityCompat;
 import androidx.core.app.NotificationCompat;
@@ -17,6 +18,7 @@ import androidx.core.app.NotificationManagerCompat;
 import androidx.core.content.ContextCompat;
 
 import java.util.ArrayList;
+import java.util.Calendar;
 import java.util.HashMap;
 
 public class MessageSenderService extends Service {
@@ -31,35 +33,46 @@ public class MessageSenderService extends Service {
 
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
-        DatabaseHelper dbHelper = new DatabaseHelper(this);
+        Calendar startCalendar = Calendar.getInstance();
+        startCalendar.setTimeInMillis(System.currentTimeMillis());
+        startCalendar.set(Calendar.HOUR_OF_DAY, 8);
+        startCalendar.set(Calendar.MINUTE, 0);
+        startCalendar.set(Calendar.SECOND, 0);
 
-        createTextMessage("09036229568");
-        createNotification(this, "Birthday free haircut message sent to Farzad");
+        Calendar endCalendar = Calendar.getInstance();
+        endCalendar.setTimeInMillis(System.currentTimeMillis());
+        endCalendar.set(Calendar.HOUR_OF_DAY, 20);
+        endCalendar.set(Calendar.MINUTE, 0);
+        endCalendar.set(Calendar.SECOND, 0);
 
-        ArrayList<HashMap<String, String>> todayBirthdays = dbHelper.getTodayBirthdays();
+        if (startCalendar.getTimeInMillis() <= System.currentTimeMillis() && System.currentTimeMillis() <= endCalendar.getTimeInMillis()) {
+            DatabaseHelper dbHelper = new DatabaseHelper(this);
 
-        for (int i = 0; i < todayBirthdays.size(); i++) {
-            // Get a customer to send message
-            HashMap<String, String> customer = todayBirthdays.get(i);
-            String phone = customer.get("phone");
-            String name = customer.get("name");
+            ArrayList<HashMap<String, String>> todayBirthdays = dbHelper.getTodayBirthdays();
 
-            // Send message if didn't send for today
-            if (!dbHelper.isMessageSentToday(phone)) {
-                if (ContextCompat.checkSelfPermission(this, android.Manifest.permission.SEND_SMS) == PackageManager.PERMISSION_GRANTED) {
-                    // Send the text message
-                    createTextMessage(phone);
+            for (int i = 0; i < todayBirthdays.size(); i++) {
+                // Get a customer to send message
+                HashMap<String, String> customer = todayBirthdays.get(i);
+                String phone = customer.get("phone");
+                String name = customer.get("name");
 
-                    // Save the message sent today for this number and birthdate to the database
-                    dbHelper.saveMessageSentToday(phone);
+                // Send message if didn't send for today
+                if (!dbHelper.isMessageSentToday(phone)) {
+                    if (ContextCompat.checkSelfPermission(this, android.Manifest.permission.SEND_SMS) == PackageManager.PERMISSION_GRANTED) {
+                        // Send the text message
+                        createTextMessage(phone);
 
-                    // Send notification to this app user to let him know about sent message
-                    createNotification(this, "Birthday free haircut message sent to " + name);
+                        // Save the message sent today for this number and birthdate to the database
+                        dbHelper.saveMessageSentToday(phone);
+
+                        // Send notification to this app user to let him know about sent message
+                        createNotification(this, "Birthday free haircut message sent to " + name);
+                    }
                 }
             }
         }
 
-        return START_STICKY;
+        return START_NOT_STICKY;
     }
 
     private void createTextMessage(String phone) {
@@ -70,12 +83,8 @@ public class MessageSenderService extends Service {
 
         // Send the text message
         SmsManager smsManager = SmsManager.getDefault();
-        smsManager.sendTextMessage(phone, null, message, null, null);
-
-//        Intent sendIntent = new Intent(Intent.ACTION_VIEW);
-//        sendIntent.putExtra("sms_body", message);
-//        sendIntent.setType("vnd.android-dir/mms-sms");
-//        startActivity(sendIntent);
+        ArrayList<String> parts = smsManager.divideMessage(message);
+        smsManager.sendMultipartTextMessage(phone, null, parts, null, null);
     }
 
     private void createNotification(Context context, String description) {
